@@ -1,8 +1,11 @@
 #ifndef C_SERVER_H
 #define C_SERVER_H
 
-#include "c_socket.h"
 #include "_myData.h"
+#include "c_gamescontroller.h"
+#include "c_game.h"
+#include "c_socket.h"
+#include "c_player.h"
 
 #include <QTcpServer>
 #include <QThreadPool>
@@ -10,12 +13,28 @@
 #include <QTcpSocket>
 #include <QList>
 #include <QPair>
+#include <QAbstractSocket>
+
+namespace server {
+    struct playerConnection {
+        c_socket *connection;
+        c_player *player;
+        ~playerConnection() {
+            qDebug() << "deleted playerConnection";
+            connection->deleteLater();
+            player->deleteLater();
+        }
+        QString toString() {
+            return QString("%1 [ %2 ]").arg(player->toString(), connection->toString());
+        }
+    };
+}
 
 class c_server : public QTcpServer
 {
     Q_OBJECT
 public:
-    explicit c_server(QObject *parent = nullptr);
+    c_server(QObject *parent = nullptr);
     ~c_server();
 
     bool runServer();
@@ -23,20 +42,28 @@ public:
 
     quint32 removePeers();  //zwraca liszbę usuniętych
 
+    QObject *getGamesControllerConnector() const;
+    void setGamesControllerConnector(QObject *newGamesControllerConnector);
+
 public slots:
-    void newPeer(c_socket * peer);
-    void removePeer(c_socket *socket);
+    void newPeer(server::playerConnection *peer);
+    void removePeer(server::playerConnection *peer);
     void removePeer(qintptr socketDescriptor);
+    void removePeer(c_socket * socket);
+
+    void sendAnswerToPeer(qintptr socketDescriptor, const QByteArray & answerPacket);
 
 
 protected:
-    virtual void incomingConnection(qintptr socketDescriptor);
+    void incomingConnection(qintptr socketDescriptor);
 
 private:
     QHostAddress address;
     quint16 port;
 
-    QList<c_socket *> connectedPeers;
+    QObject * gamesControllerConnector;
+
+    QList<server::playerConnection *> connectedPeers;
 
 private slots:
 

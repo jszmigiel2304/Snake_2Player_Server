@@ -1,19 +1,33 @@
 #include "c_socket.h"
+#include "c_parser.h"
+#include "_myData.h"
 
 c_socket::c_socket(qintptr socketDescriptor, QObject *parent)
     : QTcpSocket{parent}, socketDescriptor{socketDescriptor}
 {
+    socket.setParent(this);
+    socket.setSocketDescriptor(socketDescriptor);
+
     connect(&socket, SIGNAL(connected()), this, SLOT(peerConnected()));
     connect(&socket, SIGNAL(disconnected()), this, SLOT(peerDisconnected()));
     connect(&socket, SIGNAL(errorOccurred(QAbstractSocket::SocketError)), this, SLOT(peerErrorOccurred(QAbstractSocket::SocketError)));
-    connect(&socket, SIGNAL(stateChanged(QAbstractSocket::SocketState )), this, SLOT(peerStateChanged(QAbstractSocket::SocketState)));
+    connect(&socket, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(peerStateChanged(QAbstractSocket::SocketState)));
     connect(&socket, SIGNAL(aboutToClose()), this, SLOT(peerAboutToClose()));
     connect(&socket, SIGNAL(bytesWritten(qint64)), this, SLOT(peerBytesWritten(qint64)));
     connect(&socket, SIGNAL(readyRead()), this, SLOT(peerReadyRead()));
+    connect(this, SIGNAL(dataReceived(QByteArray, qintptr)), this, SLOT(processReceivedData(QByteArray, qintptr)));
+
+    connect(this, SIGNAL(readingPacketErrorSignal()), this, SLOT(readingPacketError()));
 
     socket.open(QIODevice::ReadWrite);
+}
 
-    emit newPeer(this);
+c_socket::~c_socket()
+{
+    if(socket.state() == QAbstractSocket::ConnectedState)
+    {
+        socket.disconnectFromHost();
+    }
 }
 
 qintptr c_socket::getSocketDescriptor() const
@@ -32,11 +46,24 @@ bool c_socket::operator!=(const c_socket &socket) const
     return !operator==(socket);
 }
 
-void c_socket::writeToPeer(const char *msg)
+void c_socket::write(QByteArray data)
 {
-    socket.write(msg);
-    socket.flush();
+    socket.write(data);
+    writeEndOfPacket();
     socket.waitForBytesWritten();
+}
+
+
+QString c_socket::toString()
+{
+    return QString("Peer: %1").arg(socketDescriptor);
+}
+
+void c_socket::writeEndOfPacket()
+{
+    const char *eop {"\n"};
+    socket.write(eop);
+    socket.flush();
 }
 
 const QTcpSocket &c_socket::getSocket() const
@@ -77,5 +104,32 @@ void c_socket::peerBytesWritten(qint64 bytes)
 
 void c_socket::peerReadyRead()
 {
-    qDebug() << "Peer " << socketDescriptor << "reading data... ";
+    while(socket.canReadLine()) {
+        QByteArray data = socket.readLine();
+        qDebug() << "Peer " << socketDescriptor << "reading data... [ " << data.size() << " bytes]";
+
+        emit dataReceived(data, socketDescriptor);
+    }
+}
+
+void c_socket::processReceivedData(QByteArray data, qintptr socketDescriptor)
+{
+    c_parser parser;
+    parser::Packet packet = parser.ParseReceivedPacket(data, socketDescriptor);
+
+    switch (packet.content) {
+    case parser::EMPTY: { return;}
+    case parser::ERROR_READING_JSON: { emit readingPacketErrorSignal(); return; }
+    case parser::SET_PLAYER_NAME: { emit playersNameReceivedSignal(socketDescriptor, packet.data.at(0)["player_name"].toString()); return; }
+    case parser::CREATE_NEW_GAME: { emit newGameRequest(socketDescriptor); return;}
+    case parser::REMOVE_GAME: { emit removeGameRequest(socketDescriptor, packet.data.at(0)["game_name"].toString()); return;}
+    case parser::GAME_INFOS_CHANGED: { emit gameInformationsChanged(socketDescriptor, packet.data.at(0)); return;}
+    case parser::GET_GAMES_LIST: { emit gamesListRequest(socketDescriptor ); return;}
+    default: {break;}
+    }
+}
+
+void c_socket::readingPacketError()
+{
+    qDebug() << "Packet reading error.";
 }
