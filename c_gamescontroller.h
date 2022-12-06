@@ -16,8 +16,6 @@ public:
     explicit c_gamesController(QObject *parent = nullptr);
     ~c_gamesController();
 
-
-
     const QList<c_game *> &getGames() const;
 
 public slots:
@@ -33,6 +31,7 @@ private:
     QList<c_game *> games;
 
 private slots:
+    void removeGame(QObject * game);
     void modifyGame(c_game * game, const QMap<QString, QVariant> &gameInfos);
     void modifyGame(quint32 index, const QMap<QString, QVariant> &gameInfos);
 

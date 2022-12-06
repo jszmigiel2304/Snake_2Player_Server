@@ -4,9 +4,9 @@ c_game::c_game(c_player * gameOwner, QObject *parent)
     : QObject{parent}, owner(gameOwner)
 {
     isStarted = false;
-    players.first = nullptr;
+    players.first = gameOwner;
     players.second = nullptr;
-    owner = nullptr;
+    owner = gameOwner;
 
     identifier = QUuid::createUuid();
     name = identifier.toString(QUuid::WithoutBraces);
@@ -22,11 +22,10 @@ c_game::c_game(c_player * gameOwner, QObject *parent)
     connect(eventCtrlr, SIGNAL(moveEvent(QPair<bool, bool> )), this, SLOT(movePlayer(QPair<bool, bool> )));
     connect(eventCtrlr, SIGNAL(speedUpEvent(QPair<bool, bool>)), this, SLOT(speedUpPlayer(QPair<bool, bool>)), Qt::DirectConnection);
 
-    connect(players.first, SIGNAL(potentialCollisionSignal(QList<QPoint> &, const board::boardArray &)), this, SLOT(testPotentialCollision(QList<QPoint> &, const board::boardArray &)), Qt::DirectConnection);
-    connect(players.second, SIGNAL(potentialCollisionSignal(QList<QPoint> &, const board::boardArray &)), this, SLOT(testPotentialCollision(QList<QPoint> &, const board::boardArray &)), Qt::DirectConnection);
+//    connect(players.first, SIGNAL(potentialCollisionSignal(QList<QPoint> &, const board::boardArray &)), this, SLOT(testPotentialCollision(QList<QPoint> &, const board::boardArray &)), Qt::DirectConnection);
+//    connect(players.second, SIGNAL(potentialCollisionSignal(QList<QPoint> &, const board::boardArray &)), this, SLOT(testPotentialCollision(QList<QPoint> &, const board::boardArray &)), Qt::DirectConnection);
 
     connect(this, SIGNAL(stopGameSignal()), eventCtrlr, SLOT(stopTimers()), Qt::DirectConnection);
-
 }
 
 c_game::~c_game()
@@ -36,7 +35,7 @@ c_game::~c_game()
 
 QString c_game::toString()
 {
-    return QString("%1 [ %2 ]").arg(identifier.toString(), owner->toString());
+    return QString("%1 [ %2 ]").arg(name, owner->toString());
 }
 
 c_game *c_game::newGame(c_player *gameOwner, QObject *parent)
@@ -99,13 +98,14 @@ game::gameInformations c_game::getGameInfo()
     game::gameInformations gameInfo;
 
     gameInfo.gameName = getName();
+    gameInfo.ownerName = owner->getName();
     gameInfo.state = getState();
 
     if(players.first != nullptr) {
         gameInfo.playersNames.first = getPlayers().first->getName();
         gameInfo.playersReadyCheck.first = getPlayers().first->getReadyCheck();
     } else {
-        gameInfo.playersNames.first = "[PLAYER_ONE_NAME_NOT_FOUND]";
+        gameInfo.playersNames.first = QString();
         gameInfo.playersReadyCheck.first = false;
     }
 
@@ -113,7 +113,7 @@ game::gameInformations c_game::getGameInfo()
         gameInfo.playersNames.second = getPlayers().second->getName();
         gameInfo.playersReadyCheck.second = getPlayers().second->getReadyCheck();
     } else {
-        gameInfo.playersNames.second = "[PLAYER_TWO_NAME_NOT_FOUND]";
+        gameInfo.playersNames.second = QString();
         gameInfo.playersReadyCheck.second = false;
     }
 
@@ -128,6 +128,14 @@ bool c_game::getIsStarted() const
 void c_game::setIsStarted(bool newIsStarted)
 {
     isStarted = newIsStarted;
+}
+
+void c_game::setOwner(const QString &ownerName)
+{
+    if(players.first->getName() == ownerName) {owner = players.first; return; }
+    if(players.second->getName() == ownerName) {owner = players.second; return; }
+
+    qDebug() << "Nie udało się ustawić włąściciela gry !!!!";
 }
 
 void c_game::changeMoveDirection(snake::MoveDirection direction)

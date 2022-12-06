@@ -3,6 +3,7 @@
 
 #include "_myData.h"
 #include "c_game.h"
+#include "c_lobby.h"
 
 #include <QObject>
 #include <QByteArray>
@@ -22,20 +23,36 @@ class c_parser : public QObject
 {
     Q_OBJECT
 public:
-    explicit c_parser(QObject *parent = nullptr);    
+    explicit c_parser(QObject *parent = nullptr);
 
-    QByteArray prepareSetPlayerNamePacket(const QString &playerName);
-    QByteArray prepareSetPlayerNameAnswer(const QString &playerName);
-    QByteArray prepareGamesListRequest();
-    QByteArray prepareGamesListPacket(const QList<game::gameInformations> &gamesData);
-    QByteArray prepareNewGameRequest();
-    QByteArray prepareNewGameRequestAnswer(const game::gameInformations &game);
-    QByteArray prepareModifyGameRequestAnswer(const game::gameInformations &game);
-    QByteArray prepareRemoveGameRequestAnswer(const QString &gameName);
+    void prepareJSON(parser::PacketContent content, const QList<QMap<QString, QVariant>> &packet_data);
+    void ParseReceivedPacket(const QByteArray &data, parser::Packet &outerPacket, qintptr socketDescriptor = -1);
 
-    QJsonDocument prepareJSON(parser::PacketContent content, const QList<QMap<QString, QVariant>> &packet_data);
-    parser::Packet ParseReceivedPacket(QByteArray data, qintptr socketDescriptor);
+    const QByteArray &prepareSetPlayerNamePacket(const QString &playerName);
+    const QByteArray &prepareSetPlayerNameAnswer(const QString &playerName);
 
+    const QByteArray &prepareGamesListRequest();
+    const QByteArray &prepareGamesListPacket(const QList<game::gameInformations> &gamesData);
+
+    const QByteArray &prepareLobbiesListRequest();
+    const QByteArray &prepareLobbiesListPacket(const QList<lobby::lobbyInformations> &lobbiesData);
+
+    const QByteArray &prepareNewGameRequest(const QString &playerName);
+    const QByteArray &prepareNewGameRequestAnswer(const game::gameInformations &game);
+
+    const QByteArray &prepareNewLobbyRequest(const QString &playerName);
+    const QByteArray &prepareNewLobbyRequestAnswer(const lobby::lobbyInformations &lobby);
+
+    const QByteArray &prepareModifyGameRequestAnswer(const game::gameInformations &game);
+    const QByteArray &prepareModifyLobbyRequestAnswer(const lobby::lobbyInformations &lobby);
+
+    const QByteArray &prepareRemoveGameRequestAnswer(const QString &gameName);
+    const QByteArray &prepareRemoveLobbyRequestAnswer(const QString &lobbyName);
+
+private:
+    QByteArray answerPacket;
+
+    void saveDocumentToByteArray(const QJsonDocument &doc, QByteArray *outerByteArray = nullptr);
 
 signals:
 

@@ -17,6 +17,7 @@ typedef QPair<c_player *, c_player *> Players;
 struct gameInformations {
     QString gameName;
     game::State state;
+    QString ownerName;
     QPair<QString, QString> playersNames;
     QPair<bool, bool> playersReadyCheck;
 
@@ -29,6 +30,7 @@ struct gameInformations {
         map["player_two_name"] = playersNames.second;
         map["player_one_ready_check"] = playersReadyCheck.first;
         map["player_two_ready_check"] = playersReadyCheck.second;
+        map["owner_name"] = ownerName;
 
         return map;
     };
@@ -41,6 +43,7 @@ struct gameInformations {
         gameInfos.playersNames.second = map["player_two_name"].toString();
         gameInfos.playersReadyCheck.first = map["player_one_ready_check"].toBool();
         gameInfos.playersReadyCheck.second = map["player_two_ready_check"].toBool();
+        gameInfos.ownerName = map["owner_name"].toString();
 
         return gameInfos;
     };
@@ -75,6 +78,7 @@ public:
     bool getIsStarted() const;
     void setIsStarted(bool newIsStarted);
 
+    void setOwner(const QString &ownerName);
 
     c_eventController *getEventCtrlr() const;
 
@@ -105,7 +109,6 @@ private slots:
     void movePlayer(QPair<bool, bool> player);
     void speedUpPlayer(QPair<bool, bool> player);
     void testPotentialCollision(QList<QPoint> & snake, const board::boardArray & board);
-
 
 signals:
     void speedUpSignal(QPair<bool, bool> player, quint8 speedLevel);

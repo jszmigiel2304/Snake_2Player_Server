@@ -26,7 +26,8 @@ void c_gamesController::removeGame(qintptr socketDescriptor, const QString &owne
     auto modifiedGame = std::find_if(games.begin(), games.end(),
                                      [&on](const c_game * game) {return game->getOwner()->getName() == on;} );
 
-    QByteArray answerPacket = c_parser().prepareRemoveGameRequestAnswer((*modifiedGame)->getName());
+    c_parser parser;
+    QByteArray answerPacket = parser.prepareRemoveGameRequestAnswer((*modifiedGame)->getName());
 
     games.removeAll(*modifiedGame);
 
@@ -79,16 +80,19 @@ void c_gamesController::gamesListRequest(qintptr socketDescriptor)
     emit sendAnswerToPeer(socketDescriptor, answerPacket);
 }
 
-struct gameInformations {
-    QString gameName;
-    game::State state;
-    QPair<QString, QString> playersNames;
-    QPair<bool, bool> playersReadyCheck;
-};
+void c_gamesController::removeGame(QObject *game)
+{
+    for(int i = 0; i<games.size(); i++) {
+        if(games[i] == game) {
+            games.takeAt(i)->deleteLater();
+        }
+    }
+}
 
 void c_gamesController::modifyGame(c_game *game, const QMap<QString, QVariant> &gameInfos)
 {
     game->setName( gameInfos["game_name"].toString() );
+    game->setOwner( gameInfos["owner_name"].toString() );
     game->getPlayers().first->setName( gameInfos["player_one_name"].toString() );
     game->getPlayers().first->setReadyCheck( gameInfos["player_one_ready_check"].toBool() );
     game->getPlayers().second->setName( gameInfos["player_two_name"].toString() );
@@ -120,6 +124,8 @@ void c_gamesController::newGame(qintptr socketDescriptor, c_player *owner)
     games.append( game );
 
     QByteArray answerPacket = c_parser().prepareNewGameRequestAnswer(game->getGameInfo());
+
+    qDebug() << "New game created: " << game->toString();
 
     emit sendAnswerToPeer(socketDescriptor, answerPacket);
 }

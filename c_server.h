@@ -3,6 +3,7 @@
 
 #include "_myData.h"
 #include "c_gamescontroller.h"
+#include "c_lobbiescontroller.h"
 #include "c_game.h"
 #include "c_socket.h"
 #include "c_player.h"
@@ -45,6 +46,9 @@ public:
     QObject *getGamesControllerConnector() const;
     void setGamesControllerConnector(QObject *newGamesControllerConnector);
 
+    QObject *getLobbiesControllerConnector() const;
+    void setLobbiesControllerConnector(QObject *newLobbiesControllerConnector);
+
 public slots:
     void newPeer(server::playerConnection *peer);
     void removePeer(server::playerConnection *peer);
@@ -62,6 +66,7 @@ private:
     quint16 port;
 
     QObject * gamesControllerConnector;
+    QObject * lobbiesControllerConnector;
 
     QList<server::playerConnection *> connectedPeers;
 

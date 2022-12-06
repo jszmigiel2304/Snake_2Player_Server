@@ -3,12 +3,16 @@
 #include "c_socket.h"
 
 #define _GAMES_CTRLR_ dynamic_cast<c_gamesController *>(getGamesControllerConnector())
+#define _LOBBIES_CTRLR_ dynamic_cast<c_lobbiesController *>(getLobbiesControllerConnector())
 
 c_server::c_server(QObject *parent)
     : QTcpServer(parent)
 {
     address = QHostAddress(server::addres);
     port = server::port;
+
+    gamesControllerConnector = nullptr;
+    lobbiesControllerConnector = nullptr;
 }
 
 c_server::~c_server()
@@ -84,10 +88,13 @@ void c_server::removePeer(c_socket *socket)
     while (i.hasNext()) {
         if (i.next()->connection->getSocketDescriptor() == socket->getSocketDescriptor()){
             i.value()->connection->deleteLater();
+            dynamic_cast<c_gamesController *>(gamesControllerConnector)->removeGame(i.value()->player);
+            dynamic_cast<c_lobbiesController *>(lobbiesControllerConnector)->removeLobby(i.value()->player);
             i.value()->player->deleteLater();
             i.remove();
+            qDebug() << "Peer removed";
         }
-    }
+    }    
 }
 
 void c_server::sendAnswerToPeer(qintptr socketDescriptor, const QByteArray &answerPacket)
@@ -113,16 +120,26 @@ void c_server::incomingConnection(qintptr socketDescriptor)
     connect(socket, SIGNAL(connectionFinished(c_socket*)), this, SLOT(removePeer(c_socket*)));
 
     connect(socket, SIGNAL(playersNameReceivedSignal(qintptr, QString)), player, SLOT(setName(qintptr, QString)));
-    connect(socket, SIGNAL(newGameRequest(qintptr)), player, SLOT(orderNewGame(qintptr)));
-    connect(player, SIGNAL(orderNewGameSignal(qintptr, c_player*)), _GAMES_CTRLR_, SLOT(newGame(qintptr, c_player*)));
+    connect(socket, SIGNAL(newLobbyRequest(qintptr, const QString&)), player, SLOT(orderNewLobby(qintptr, const QString&)));
+    connect(player, SIGNAL(orderNewLobbySignal(qintptr, c_player*)), _LOBBIES_CTRLR_, SLOT(newLobby(qintptr, c_player*)));
     connect(player, SIGNAL(sendAnswerToPeer(qintptr,QByteArray)), this, SLOT(sendAnswerToPeer(qintptr,QByteArray)));
-    connect(socket, SIGNAL(removeGameRequest(qintptr, const QString &)), _GAMES_CTRLR_, SLOT(removeGame(qintptr, const QString&)));
-    connect(socket, SIGNAL(gameInformationsChanged(qintptr, QMap<QString, QVariant>)), _GAMES_CTRLR_, SLOT(modifyGame(qintptr, QMap<QString, QVariant>)));
-    connect(socket, SIGNAL(gamesListRequest(qintptr)), _GAMES_CTRLR_, SLOT(gamesListRequest(qintptr)));
+    connect(socket, SIGNAL(removeLobbyRequest(qintptr, const QString &)), _LOBBIES_CTRLR_, SLOT(removeLobby(qintptr, const QString&)));
+    connect(socket, SIGNAL(lobbyInformationsChanged(qintptr, QMap<QString, QVariant>)), _LOBBIES_CTRLR_, SLOT(modifyLobby(qintptr, QMap<QString, QVariant>)));
+    connect(socket, SIGNAL(lobbiesListRequest(qintptr)), _LOBBIES_CTRLR_, SLOT(lobbiesListRequest(qintptr)));
 
     addPendingConnection( const_cast<QTcpSocket *>(&socket->getSocket()) );
 
     connectedPeers.append(peer);
+}
+
+QObject *c_server::getLobbiesControllerConnector() const
+{
+    return lobbiesControllerConnector;
+}
+
+void c_server::setLobbiesControllerConnector(QObject *newLobbiesControllerConnector)
+{
+    lobbiesControllerConnector = newLobbiesControllerConnector;
 }
 
 QObject *c_server::getGamesControllerConnector() const

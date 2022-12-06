@@ -40,7 +40,8 @@ public:
 public slots:
     void setName(const QString &newName);
     void setName(qintptr socketDescriptor, const QString &newName);
-    void orderNewGame(qintptr socketDescriptor);
+    void orderNewGame(qintptr socketDescriptor, const QString &playerName);
+    void orderNewLobby(qintptr socketDescriptor, const QString &playerName);
 
     void move();
     void speedUp(quint8 speedLevel);
@@ -63,6 +64,7 @@ private slots:
 signals:
     void sendAnswerToPeer(qintptr socketDescriptor, const QByteArray &answerPacket);
     void orderNewGameSignal(qintptr socketDescriptor, c_player * gameOwner);
+    void orderNewLobbySignal(qintptr socketDescriptor, c_player * gameOwner);
     void boardChangedSignal(const board::boardArray &board, const c_snake &snake);
     void potentialCollisionSignal(QList<QPoint> & snake, const board::boardArray & board);
 

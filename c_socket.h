@@ -54,10 +54,10 @@ signals:
 
     void readingPacketErrorSignal();
     void playersNameReceivedSignal(qintptr socketDescriptor, const QString &name);
-    void newGameRequest(qintptr socketDescriptor);
-    void removeGameRequest(qintptr socketDescriptor, const QString &gameName);
-    void gameInformationsChanged(qintptr socketDescriptor, const QMap<QString, QVariant> &gameInfos);
-    void gamesListRequest(qintptr socketDescripto);
+    void newLobbyRequest(qintptr socketDescriptor, const QString&playerName);
+    void removeLobbyRequest(qintptr socketDescriptor, const QString &lobbyName);
+    void lobbyInformationsChanged(qintptr socketDescriptor, const QMap<QString, QVariant> &lobbyInfos);
+    void lobbiesListRequest(qintptr socketDescripto);
 };
 
 #endif // C_SOCKET_H

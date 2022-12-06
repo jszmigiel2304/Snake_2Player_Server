@@ -4,7 +4,6 @@
 c_player::c_player(QObject *parent)
     : QObject{parent}
 {
-    name = "player";
     board = new c_board(this);
     snake = new c_snake(this);
     wallet = new c_wallet(this);
@@ -13,7 +12,6 @@ c_player::c_player(QObject *parent)
 
     connect(board, SIGNAL(boardChanged()), this, SLOT(boardChanged()));
     connect(snake, SIGNAL(snakeChanged()), this, SLOT(snakeChanged()));
-
 }
 
 c_player::~c_player()
@@ -47,9 +45,16 @@ void c_player::setName(qintptr socketDescriptor, const QString &newName)
     emit sendAnswerToPeer(socketDescriptor, answerPacket);
 }
 
-void c_player::orderNewGame(qintptr socketDescriptor)
+void c_player::orderNewGame(qintptr socketDescriptor, const QString &playerName)
 {
+    setName(playerName);
     emit orderNewGameSignal(socketDescriptor, this);
+}
+
+void c_player::orderNewLobby(qintptr socketDescriptor, const QString &playerName)
+{
+    setName(playerName);
+    emit orderNewLobbySignal(socketDescriptor, this);
 }
 
 bool c_player::getReadyCheck() const

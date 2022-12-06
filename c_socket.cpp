@@ -84,22 +84,25 @@ void c_socket::peerDisconnected()
 
 void c_socket::peerErrorOccurred(SocketError error)
 {
-    qDebug() << "Peer " << socketDescriptor << " error occurred: " << error;
+    Q_UNUSED(error)
+    //qDebug() << "Peer " << socketDescriptor << " error occurred: " << error;
 }
 
 void c_socket::peerStateChanged(SocketState state)
 {
-    qDebug() << "Peer " << socketDescriptor << " state changed: " << state;
+    Q_UNUSED(state)
+    //qDebug() << "Peer " << socketDescriptor << " state changed: " << state;
 }
 
 void c_socket::peerAboutToClose()
 {
-    qDebug() << "Closing Peer " << socketDescriptor << "...";
+    //qDebug() << "Closing Peer " << socketDescriptor << "...";
 }
 
 void c_socket::peerBytesWritten(qint64 bytes)
 {
-    qDebug() << "Peer " << socketDescriptor << " write data: " << bytes << " bytes.";
+    Q_UNUSED(bytes)
+    //qDebug() << "Peer " << socketDescriptor << " write data: " << bytes << " bytes.";
 }
 
 void c_socket::peerReadyRead()
@@ -114,17 +117,17 @@ void c_socket::peerReadyRead()
 
 void c_socket::processReceivedData(QByteArray data, qintptr socketDescriptor)
 {
-    c_parser parser;
-    parser::Packet packet = parser.ParseReceivedPacket(data, socketDescriptor);
+    parser::Packet packet;
+    c_parser().ParseReceivedPacket(data, packet, socketDescriptor);
 
     switch (packet.content) {
     case parser::EMPTY: { return;}
     case parser::ERROR_READING_JSON: { emit readingPacketErrorSignal(); return; }
     case parser::SET_PLAYER_NAME: { emit playersNameReceivedSignal(socketDescriptor, packet.data.at(0)["player_name"].toString()); return; }
-    case parser::CREATE_NEW_GAME: { emit newGameRequest(socketDescriptor); return;}
-    case parser::REMOVE_GAME: { emit removeGameRequest(socketDescriptor, packet.data.at(0)["game_name"].toString()); return;}
-    case parser::GAME_INFOS_CHANGED: { emit gameInformationsChanged(socketDescriptor, packet.data.at(0)); return;}
-    case parser::GET_GAMES_LIST: { emit gamesListRequest(socketDescriptor ); return;}
+    case parser::CREATE_NEW_LOBBY: { emit newLobbyRequest(socketDescriptor, packet.data.at(0)["player_name"].toString()); return;}
+    case parser::REMOVE_LOBBY: { emit removeLobbyRequest(socketDescriptor, packet.data.at(0)["lobby_name"].toString()); return;}
+    case parser::LOBBY_INFOS_CHANGED: { emit lobbyInformationsChanged(socketDescriptor, packet.data.at(0)); return;}
+    case parser::GET_LOBBIES_LIST: { emit lobbiesListRequest(socketDescriptor ); return;}
     default: {break;}
     }
 }

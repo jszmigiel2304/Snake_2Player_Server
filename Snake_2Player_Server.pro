@@ -13,6 +13,8 @@ SOURCES += \
         c_eventcontroller.cpp \
         c_game.cpp \
         c_gamescontroller.cpp \
+        c_lobbiescontroller.cpp \
+        c_lobby.cpp \
         c_mytimer.cpp \
         c_parser.cpp \
         c_player.cpp \
@@ -33,6 +35,8 @@ HEADERS += \
     c_eventcontroller.h \
     c_game.h \
     c_gamescontroller.h \
+    c_lobbiescontroller.h \
+    c_lobby.h \
     c_mytimer.h \
     c_parser.h \
     c_player.h \

@@ -109,6 +109,15 @@ namespace game {
 
 }
 
+namespace lobby {
+    enum State : quint8 {
+        LOBBY_CREATED_NOT_INITIALIZED,
+        LOBBY_INITIALIZED,
+        LOBBY_WAITING_FOR_PLAYERS_READY_CHECK,
+        LOBBY_READY_TO_START,
+    };
+}
+
 namespace board {
     constexpr quint8 boardSize = 50;
 
@@ -177,7 +186,14 @@ namespace parser {
         GAME_BOARD_STATE_CHANGED = 34,
         GAME_SNAKE_MOVE_DIRECTION_CHANGED = 35,
         GAME_PLAYER_COINS_NUMBER_CHANGED = 36,
-        GAME_PLAYER_SHOP_CHANGED = 37
+        GAME_PLAYER_SHOP_CHANGED = 37,
+        CREATE_NEW_LOBBY = 50,
+        LOBBY_CREATED = 51,
+        REMOVE_LOBBY = 52,
+        LOBBY_REMOVED = 53,
+        LOBBY_INFOS_CHANGED = 54,
+        GET_LOBBIES_LIST = 55,
+        LOBBIES_LIST = 56,
     };
 
     struct Packet {
